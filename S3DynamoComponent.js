@@ -5,23 +5,12 @@ class S3DynamoComponent extends pulumi.ComponentResource {
     constructor(name, args, opts) {
         super("customer:resource:S3DynamoComponent", name, args, opts)
 
-        let bucket = new aws.s3.Bucket("myBucket", {
-            name: args.bucketName,
-            policy: {
-                Version: "2012-10-17",
-                Statement: [
-                    {
-                        Effect: "Allow",
-                        Principal: "*",
-                        Action: "s3:*",
-                        Resource: "s3.amazonaws.com"
-                    }
-                ]
-            }
-        }, { parent: this })
+        let bucket = new aws.s3.Bucket(args.bucketName, {}, { parent: this })
 
-        const dynamoTable = new aws.dynamodb.Table("myTable", {
-            name: args.tableName,
+        this.bucketId = bucket.id;
+        this.bucketArn = bucket.arn;
+
+        const dynamoTable = new aws.dynamodb.Table(args.tableName, {
             attributes: args.tableAttributes,
             billingMode: "PAY_PER_REQUEST",
             hashKey: args.hashKey,
@@ -38,11 +27,34 @@ class S3DynamoComponent extends pulumi.ComponentResource {
             }
         }, { parent: this })
 
+        this.table = dynamoTable
+
         this.registerOutputs({
-            bucket: bucket,
-            table: dynamoTable
+            bucketId: this.bucketId,
+            bucketArn: this.bucketArn,
+            table: this.dynamoTable
         })
     }
 }
 
-module.exports = S3DynamoComponent;
+const s3DynamoArgs = {
+    bucketName: "file-storage",
+    tableName: "file-index",
+    tableAttributes: [
+        {
+            name: "fileId",
+            type: "S"
+        },
+        {
+            name: "timestamp",
+            type: "S"
+        }
+    ],
+    hashKey: "fileId",
+    rangeKey: "timestamp"
+}
+
+const s3DynamoComponent = new S3DynamoComponent("file-ops", s3DynamoArgs, {})
+
+exports.bucketId = s3DynamoComponent.bucketId
+exports.bucketArn = s3DynamoComponent.bucketArn
