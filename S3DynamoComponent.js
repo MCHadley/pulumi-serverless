@@ -15,16 +15,6 @@ class S3DynamoComponent extends pulumi.ComponentResource {
             billingMode: "PAY_PER_REQUEST",
             hashKey: args.hashKey,
             rangeKey: args.rangeKey,
-            policy: {
-                Version: "2012-10-17",
-                Statement: [
-                    {
-                        Effect: "Allow",
-                        Action: "dynamodb:*",
-                        Resource: "*"
-                    }
-                ]
-            }
         }, { parent: this })
 
         this.table = dynamoTable
